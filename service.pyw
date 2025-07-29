@@ -1,11 +1,17 @@
 import base64
 import os
+import sys
 
 import pyperclip
-import qrcodepip
+import qrcode
 from fastapi import FastAPI, Query, HTTPException
 
+# redirect console output
+sys.stdout = open(os.devnull, 'w')
+sys.stderr = open(os.devnull, 'w')
+
 app = FastAPI()
+os.environ["PYTHON_KEYRING_BACKEND"] = "keyring.backends.null.Keyring"
 
 
 @app.get("/send")
@@ -19,17 +25,18 @@ async def send(data: str = Query(..., description="Base64 encoded data")):
                             detail=f"Error processing data: {str(e)}")
 
 
-
 @app.get("/receive")
 async def receive():
     try:
         clipboard_data = pyperclip.paste()
+        with open(r"D:\documents\RandomScripts\clipboard_to_qr\log.txt", 'a') as f:
+            f.write(f'data: {clipboard_data}')
         if not clipboard_data:
             raise HTTPException(status_code=400, detail="Clipboard is empty")
 
         img = qrcode.make(clipboard_data)
-        img.save("qr.png")
-        os.startfile("qr.png")
+        img.save(r"D:\documents\RandomScripts\clipboard_to_qr\qr.png")
+        os.startfile(r"D:\documents\RandomScripts\clipboard_to_qr\qr.png")
     except Exception as e:
         raise HTTPException(status_code=500,
                             detail=f"Error generating QR code: {str(e)}")
